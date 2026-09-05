@@ -35,6 +35,11 @@ def favicon():
     svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#2563EB"/><path d="M30 65 L45 45 L58 55 L72 32" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="72" cy="32" r="5" fill="#38BDF8"/></svg>"""
     return Response(svg, mimetype="image/svg+xml")
 
+@app.route("/api/index")
+@app.route("/api/index.py")
+def vercel_entry_alias():
+    return redirect(url_for("home"))
+
 login_manager = LoginManager()
 login_manager.login_view = "login"
 login_manager.login_message = "Please log in to access your financial dashboard."
