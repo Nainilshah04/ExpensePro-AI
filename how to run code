@@ -1,0 +1,27 @@
+HOW TO RUN EXPENSEPRO AI 2.0 (FINTECH DASHBOARD)
+===================================================
+
+Step 1: Open Terminal in Project Folder
+cd "d:\pro 4\expense_tracker"
+
+Step 2: Install Required Dependencies
+python -m pip install flask flask_sqlalchemy flask_login reportlab openpyxl pandas
+
+Step 3: Run the Application
+python app.py
+
+Step 4: Open in Your Browser
+Visit: http://127.0.0.1:5000
+
+Step 5: Quick Demo Access (Portfolio / Recruiter Mode)
+- On the login screen, click the "1-Click Demo Login (Preloaded Data)" button.
+- It will instantly log you in with preloaded transactions, charts, subscriptions, and split groups!
+- Or click "Create Account" to test brand-new user registration.
+
+KEY FEATURES TO DEMO:
+• Real-Time AI Auto-Category: In 'Add Transaction', type "Swiggy burger" or "Uber cab" in the note field to see the AI badge predict the category instantly!
+• OCR Receipt Scanner: Click "Scan Receipt" in the top bar to scan a bill.
+• Bank CSV Import: Click "Import CSV" to upload bank statements.
+• PDF & Excel Reports: Click "Export" -> "Download PDF Statement" or "Excel Report".
+• Subscriptions: Check the "Recurring Subscriptions" tab for renewal countdowns.
+• Splitwise: Check the "Group Split" tab for shared bill settlements.

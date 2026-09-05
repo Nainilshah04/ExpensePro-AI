@@ -1,0 +1,37 @@
+# Virtual environments
+venv/
+env/
+.venv/
+**/venv/
+**/env/
+
+# Byte-compiled / cache files
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# Local SQLite databases & instances
+instance/
+**/instance/
+*.db
+*.sqlite3
+*.db-journal
+
+# Vercel deployment cache
+.vercel/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Environment variables
+.env
+.env.*
+
+# Editor & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

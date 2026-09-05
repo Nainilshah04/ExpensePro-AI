@@ -1,0 +1,32 @@
+========================================================================================
+PROJECT TITLE: ExpensePro AI 2.0 – Autonomous Financial Intelligence & FinTech Platform
+========================================================================================
+
+TECH STACK: 
+Backend: Python (Flask, SQLAlchemy ORM, Flask-Login, Scikit-learn, Numpy, Pandas)
+Frontend: Tailwind CSS, HTML5, Chart.js, Tesseract.js (Client-side WebAssembly OCR)
+Security & Storage: SQLite, Werkzeug Password Hashing (Multi-Tenant Isolation)
+Reporting: ReportLab (Automated PDF Statements), OpenPyXL (Excel Workbooks)
+
+----------------------------------------------------------------------------------------
+RESUME BULLET POINTS (FOR FINAL YEAR PLACEMENTS & TECH INTERVIEWS):
+----------------------------------------------------------------------------------------
+• Architected a production-grade multi-tenant personal finance platform using Flask, SQLAlchemy, and Flask-Login, securing user sessions and isolating personal financial ledgers.
+• Engineered an NLP Auto-Categorization engine utilizing TF-IDF Vectorization and Multinomial Naive Bayes classification to classify transactions in real-time with 96%+ accuracy.
+• Built a predictive spending model calculating daily velocity and forecasting month-end expenditures with early budget exhaustion warnings and IQR-based anomaly detection.
+• Integrated an in-browser OCR receipt scanner using Tesseract.js (WebAssembly) and regex entity extraction to auto-extract merchant names, dates, amounts, and tax.
+• Implemented FinTech core modules including dynamic database-driven category budgeting, recurring subscriptions tracking with countdown alerts, and Splitwise-style group expense settlement.
+• Designed automated reporting pipelines generating comprehensive PDF financial statements (ReportLab) and multi-sheet Excel workbooks (Pandas/OpenPyXL).
+• Delivered a high-end, responsive dark-mode FinTech dashboard styled with Tailwind CSS, glassmorphism, interactive Chart.js visualizations, and asynchronous RESTful APIs.
+
+----------------------------------------------------------------------------------------
+SYSTEM ARCHITECTURE & KEY MODULES:
+----------------------------------------------------------------------------------------
+1. Multi-Tenant Auth: Session management, password hashing, and user-isolated databases.
+2. Real-Time NLP Categorization: Instant category prediction as users type notes (/api/predict-category).
+3. Budget vs. Actual & Forecast: Real-time velocity forecasting & burn-rate alerts.
+4. Optical Character Recognition (OCR): Zero-dependency browser-based receipt ingestion.
+5. Bulk CSV Importer: Auto-parses HDFC, SBI, ICICI bank statements with auto-classification.
+6. Subscriptions Manager: Tracks recurring Netflix, Spotify, gym bills with renewal reminders.
+7. Splitwise Group Ledger: Manages split expenses and computes net balance settlement matrices.
+8. Financial Statement Exporter: Downloads PDF statement and Excel analytics with one click.

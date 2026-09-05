@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ExpensePro | Financial Intelligence</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; }
+    </style>
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-slate-50 dark:bg-[#090D16] text-slate-900 dark:text-slate-100 flex flex-col pb-20 md:pb-10 transition-colors duration-200">
+
+    <!-- Top Navigation Bar -->
+    <nav class="sticky top-0 z-40 bg-white/90 dark:bg-[#0E131E]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand & Logo -->
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-base font-bold tracking-tight text-slate-900 dark:text-white">Expense<span class="text-blue-600 dark:text-blue-400">Pro</span></span>
+                            <span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">v2.0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desktop Segmented Controls -->
+                <div class="hidden md:flex items-center p-1 bg-slate-100 dark:bg-slate-900/80 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold">
+                    <button onclick="switchTab('tab-dashboard')" id="btn-tab-dashboard" class="tab-btn px-3.5 py-1.5 rounded-lg transition bg-white dark:bg-[#182030] text-slate-900 dark:text-white shadow-sm">
+                        Overview
+                    </button>
+                    <button onclick="switchTab('tab-budgets')" id="btn-tab-budgets" class="tab-btn px-3.5 py-1.5 rounded-lg transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                        Budgets
+                    </button>
+                    <button onclick="switchTab('tab-subscriptions')" id="btn-tab-subscriptions" class="tab-btn px-3.5 py-1.5 rounded-lg transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                        Subscriptions ({{ subscriptions|length }})
+                    </button>
+                    <button onclick="switchTab('tab-groups')" id="btn-tab-groups" class="tab-btn px-3.5 py-1.5 rounded-lg transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                        Splitwise ({{ groups|length }})
+                    </button>
+                </div>
+
+                <!-- Action Controls: Ingestion, Reports & Theme Toggle -->
+                <div class="flex items-center gap-2">
+                    <!-- Quick Ingestion: Scan & CSV -->
+                    <button onclick="openModal('ocrModal')" class="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition">
+                        <i class="fa-solid fa-camera text-blue-600 dark:text-blue-400"></i>
+                        <span>Scan</span>
+                    </button>
+                    <button onclick="openModal('csvModal')" class="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition">
+                        <i class="fa-solid fa-file-csv text-emerald-600 dark:text-emerald-400"></i>
+                        <span>Import</span>
+                    </button>
+
+                    <!-- Add Transaction Button (Desktop) -->
+                    <button onclick="openModal('addModal')" class="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition">
+                        <i class="fa-solid fa-plus text-[10px]"></i>
+                        <span>Add</span>
+                    </button>
+
+                    <!-- Export Reports Dropdown -->
+                    <div class="relative group">
+                        <button class="w-9 h-9 sm:w-auto sm:px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5 text-xs font-semibold transition" title="Export Reports">
+                            <i class="fa-solid fa-download text-slate-500 dark:text-slate-400"></i>
+                            <span class="hidden sm:inline">Export</span>
+                        </button>
+                        <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-[#121722] border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg py-1 hidden group-hover:block z-50">
+                            <a href="/export/pdf" class="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                                <i class="fa-solid fa-file-pdf text-rose-500"></i> PDF Statement
+                            </a>
+                            <a href="/export/excel" class="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                                <i class="fa-solid fa-file-excel text-emerald-500"></i> Excel (.xlsx)
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Theme Toggle Switch -->
+                    <button onclick="toggleTheme()" type="button" aria-label="Toggle Light/Dark Theme" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center justify-center transition shadow-sm" title="Toggle theme">
+                        <i class="fa-solid fa-sun hidden dark:block text-amber-400 text-sm"></i>
+                        <i class="fa-solid fa-moon block dark:hidden text-slate-600 text-sm"></i>
+                    </button>
+
+                    <!-- User Account Pill -->
+                    <div class="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center text-xs font-bold">
+                            {{ current_user.username[0].upper() }}
+                        </div>
+                        <a href="/logout" title="Sign Out" class="text-slate-400 hover:text-rose-500 text-sm p-1 transition">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-4 space-y-4 flex-1">
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="space-y-2">
+                    {% for category, message in messages %}
+                        <div class="p-3.5 rounded-xl text-xs font-medium flex items-center justify-between border {% if category == 'danger' %}bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300{% elif category == 'success' %}bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300{% else %}bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300{% endif %}">
+                            <div class="flex items-center gap-2.5">
+                                <i class="fa-solid {% if category == 'danger' %}fa-circle-exclamation{% elif category == 'success' %}fa-circle-check{% else %}fa-circle-info{% endif %}"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                            <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- ================= TAB 1: OVERVIEW / DASHBOARD ================= -->
+        <div id="tab-dashboard" class="tab-content space-y-4">
+
+            <!-- PERIOD / MONTH SELECTOR BAR (Revolut / Apple Wallet Style) -->
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#121722] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl px-4 py-2.5 shadow-sm">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Period:</span>
+                    
+                    <!-- Prev Month Arrow -->
+                    {% if prev_period %}
+                    <a href="/?period={{ prev_period }}" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center text-xs transition" title="Previous Month">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </a>
+                    {% endif %}
+
+                    <!-- Period Selector Dropdown -->
+                    <select onchange="window.location.href='/?period=' + this.value" class="bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                        {% for p in available_periods %}
+                        <option value="{{ p.value }}" {% if selected_period == p.value %}selected{% endif %}>{{ p.label }}</option>
+                        {% endfor %}
+                        <option value="all" {% if selected_period == 'all' %}selected{% endif %}>All Time (Lifetime)</option>
+                    </select>
+
+                    <!-- Next Month Arrow -->
+                    {% if next_period %}
+                    <a href="/?period={{ next_period }}" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center text-xs transition" title="Next Month">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                    {% endif %}
+                </div>
+
+                <div class="flex items-center gap-2">
+                    {% if not is_current_month and selected_period != 'all' %}
+                    <span class="text-[11px] px-2.5 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 font-semibold flex items-center gap-1.5">
+                        <i class="fa-solid fa-clock-rotate-left text-[10px]"></i> Historical Record
+                    </span>
+                    <a href="/" class="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                        Current Month →
+                    </a>
+                    {% elif selected_period == 'all' %}
+                    <span class="text-[11px] px-2.5 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 font-semibold">
+                        Lifetime Ledger
+                    </span>
+                    {% else %}
+                    <span class="text-[11px] px-2.5 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 font-semibold flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active Month
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Hero Balance Card (Refined FinTech Style) -->
+            <div class="bg-white dark:bg-[#121722] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 sm:p-6 shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ period_label }} Spending</span>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">₹{{ "{:,.2f}".format(period_total_spent) }}</h2>
+                            {% if is_current_month %}
+                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">/ ₹{{ "{:,.0f}".format(forecast.projected_month_end) }} projected</span>
+                            {% else %}
+                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">({{ expenses|length }} transactions recorded)</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Quick Metrics Chips -->
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                        {% if is_current_month %}
+                        <div class="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs">
+                            <span class="text-slate-500 dark:text-slate-400">Daily Burn:</span>
+                            <span class="font-bold text-slate-900 dark:text-white ml-1">₹{{ "{:,.0f}".format(forecast.daily_velocity) }}/day</span>
+                        </div>
+                        <div class="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs">
+                            <span class="text-slate-500 dark:text-slate-400">Day:</span>
+                            <span class="font-bold text-slate-900 dark:text-white ml-1">{{ forecast.current_day }}/{{ forecast.days_in_month }}</span>
+                        </div>
+                        <div class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                            Health: {{ forecast.health_grade }} ({{ forecast.health_score }}/100)
+                        </div>
+                        {% else %}
+                        <div class="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs">
+                            <span class="text-slate-500 dark:text-slate-400">Total Filtered:</span>
+                            <span class="font-bold text-slate-900 dark:text-white ml-1">₹{{ "{:,.2f}".format(total_spent) }}</span>
+                        </div>
+                        <div class="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs font-bold text-blue-700 dark:text-blue-400">
+                            Period: {{ period_label }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if is_current_month and forecast.budget_alerts %}
+                <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
+                    {% for alert in forecast.budget_alerts %}
+                    <div class="flex items-center gap-2 text-xs font-medium {% if alert.severity == 'danger' %}text-rose-600 dark:text-rose-400{% else %}text-amber-600 dark:text-amber-400{% endif %}">
+                        <i class="fa-solid {% if alert.severity == 'danger' %}fa-circle-exclamation{% else %}fa-triangle-exclamation{% endif %}"></i>
+                        <span>{{ alert.message }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Two-Column Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+                <!-- Left Column: Record Expense & AI Insights -->
+                <div class="space-y-4">
+
+                    <!-- Add Transaction Card (Inline) -->
+                    <div class="bg-white dark:bg-[#121722] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-plus text-blue-600 dark:text-blue-400 text-xs"></i>
+                                <span>Record Expense</span>
+                            </h3>
+                            <span id="nlp-tag" class="hidden text-[11px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-900">
+                                Auto-Tagged
+                            </span>
+                        </div>
+
+                        <form method="POST" action="/add" class="space-y-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Date</label>
+                                <input type="date" name="date" id="tx-date-inline" required class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 transition">
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Amount (₹)</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">₹</span>
+                                    <input type="number" step="0.01" name="amount" required placeholder="0.00" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl pl-7 pr-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 transition">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Description / Merchant</label>
+                                <input type="text" id="note-inline" name="note" placeholder="e.g. Electricity bill, Uber, Swiggy" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 transition" oninput="handleAutoCategory(this.value, 'category-inline', 'nlp-tag')">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Category</label>
+                                    <select id="category-inline" name="category" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 transition">
+                                        {% for cat in categories %}
+                                        <option value="{{ cat }}">{{ cat }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Method</label>
+                                    <select name="payment_method" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 transition">
+                                        <option value="UPI">UPI / GPay</option>
+                                        <option value="Card">Card</option>
+                                        <option value="NetBanking">NetBanking</option>
+                                        <option value="Cash">Cash</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition shadow-sm">
+                                Save Expense
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- AI Insights Card -->
+                    <div class="bg-white dark:bg-[#121722] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-lightbulb"></i>
+                            </div>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Financial Insights</h3>
+                        </div>
+                        <div class="space-y-2.5">
+                            {% for insight in advisor_insights %}
+                            <div class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed p-2.5 rounded-xl bg-slate-50 dark:bg-[#0C101A] border border-slate-100 dark:border-slate-800">
+                                {{ insight|safe }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right Column: Visual Analytics & Transactions -->
+                <div class="lg:col-span-2 space-y-4">
+
+                    <!-- Visual Analytics: Donut & 6-Month Comparison -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Chart 1: Donut (Categorical Breakdown for Selected Period) -->
+                        <div class="bg-white dark:bg-[#121722] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-sm">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i class="fa-solid fa-chart-pie text-blue-500"></i> Category Split
+                                </h4>
+                                <span class="text-[10px] text-slate-400">{{ period_label }}</span>
+                            </div>
+                            <div class="h-44 sm:h-48 relative flex items-center justify-center">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: 6-Month Month-on-Month Comparison Bar Chart -->
+                        <div class="bg-white dark:bg-[#121722] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-sm">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i class="fa-solid fa-chart-column text-emerald-500"></i> Monthly Comparison
+                                </h4>
+                                <span class="text-[10px] text-slate-400">Past 6 Months</span>
+                            </div>
+                            <div class="h-44 sm:h-48 relative flex items-center justify-center">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Budget Performance for Selected Period -->
+                    <div class="bg-white dark:bg-[#121722] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-bullseye text-blue-500"></i> {{ period_label }} Budget Goals
+                            </h3>
+                            <button onclick="switchTab('tab-budgets')" class="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold">
+                                Edit Limits →
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {% for item in budget_data %}
+                            <div class="bg-slate-50 dark:bg-[#0C101A] p-3 rounded-xl border border-slate-100 dark:border-slate-800/80">
+                                <div class="flex justify-between items-center text-xs mb-1">
+                                    <span class="font-semibold text-slate-800 dark:text-slate-200">{{ item.name }}</span>
+                                    <span class="font-bold {{ item.text_color }}">₹{{ "{:,.0f}".format(item.spent) }} / ₹{{ "{:,.0f}".format(item.limit) }}</span>
+                                </div>
+                                <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                                    <div class="{{ item.bar_color }} h-2 rounded-full transition-all duration-300" style="width: {{ item.percent }}%"></div>
+                                </div>
+                                <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                                    <span>{{ item.percent }}% consumed</span>
+                                    <span class="{{ item.text_color }} font-medium">{{ item.badge }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="bg-white dark:bg-[#121722] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm">
+                        <form method="GET" action="/" class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+                            <input type="hidden" name="period" value="{{ selected_period }}">
+                            <div>
+                                <input type="text" name="search" value="{{ search_query }}" placeholder="Search description..." class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-600">
+                            </div>
+                            <div>
+                                <select name="category_filter" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                                    <option value="All" {% if selected_category == 'All' %}selected{% endif %}>All Categories</option>
+                                    {% for cat in categories %}
+                                    <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <input type="date" name="start_date" value="{{ start_date }}" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button type="submit" class="flex-1 py-2 px-3 bg-slate-900 hover:bg-black dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-xl text-xs font-semibold transition">
+                                    Filter
+                                </button>
+                                <a href="/?period={{ selected_period }}" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold transition text-center">
+                                    Clear
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Transactions History List -->
+                    <div class="bg-white dark:bg-[#121722] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl overflow-hidden shadow-sm">
+                        <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800/80 flex justify-between items-center">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-clock-rotate-left text-blue-500"></i> Transactions ({{ period_label }})
+                            </h3>
+                            <span class="text-xs text-slate-400 font-semibold">{{ expenses|length }} records</span>
+                        </div>
+
+                        {% if expenses %}
+                        <div class="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[480px] overflow-y-auto">
+                            {% for tx in expenses %}
+                            <div class="p-3.5 sm:p-4 flex items-center justify-between hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                        {{ tx.category[0] }}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <p class="text-xs font-bold text-slate-900 dark:text-white truncate">{{ tx.category }}</p>
+                                            <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">{{ tx.payment_method }}</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                                            {{ tx.date.strftime('%d %b %Y') }} • {{ tx.note or "Transaction" }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-2 flex-shrink-0 ml-3">
+                                    <span class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">-₹{{ "{:,.2f}".format(tx.amount) }}</span>
+                                    
+                                    <!-- Edit Button -->
+                                    <button onclick="openEditModal('{{ tx.id }}', '{{ tx.date }}', '{{ tx.amount }}', '{{ tx.category }}', '{{ tx.note or '' }}', '{{ tx.payment_method }}')" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-blue-950/40 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 flex items-center justify-center text-xs transition" title="Edit Transaction">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+
+                                    <!-- Delete Button -->
+                                    <form method="POST" action="/delete/{{ tx.id }}" onsubmit="return confirm('Delete this transaction?');">
+                                        <button type="submit" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/40 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 flex items-center justify-center text-xs transition" title="Delete Transaction">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <!-- Clean Empty State with Demo Restore Action -->
+                        <div class="p-8 text-center text-slate-500">
+                            <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-3 text-lg">
+                                <i class="fa-solid fa-receipt"></i>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300">No transactions for {{ period_label }}</h4>
+                            <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Record a new expense for this period or switch to another month.</p>
+                            
+                            <div class="flex items-center justify-center gap-2 mt-4">
+                                <button onclick="openModal('addModal')" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm transition">
+                                    + Add Expense
+                                </button>
+                                <form method="POST" action="/reset-demo">
+                                    <button type="submit" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-semibold text-xs transition">
+                                        Restore Sample Data
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ================= TAB 2: DYNAMIC BUDGETS ================= -->
+        <div id="tab-budgets" class="tab-content hidden space-y-4">
+            <div class="bg-white dark:bg-[#121722] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 sm:p-6 shadow-sm">
+                <div class="flex justify-between items-start mb-5">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 dark:text-white">Category Budget Limits</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Customize monthly caps per category. The predictive engine issues burn-rate warnings before you overshoot.</p>
+                    </div>
+                </div>
+
+                <form method="POST" action="/budgets/update">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                        {% for b in budget_data %}
+                        <div class="bg-slate-50 dark:bg-[#0C101A] p-4 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                            <div class="flex justify-between items-center text-xs mb-1.5">
+                                <span class="font-bold text-slate-900 dark:text-white">{{ b.name }}</span>
+                                <span class="font-semibold {{ b.text_color }}">{{ b.percent }}% Used</span>
+                            </div>
+                            <div class="relative mt-2">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">₹</span>
+                                <input type="number" step="100" name="budget_{{ b.id }}" value="{{ b.limit }}" required class="w-full bg-white dark:bg-[#121722] border border-slate-200 dark:border-slate-700 rounded-xl pl-7 pr-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1.5">Current spent: ₹{{ "{:,.0f}".format(b.spent) }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mt-5 flex justify-end">
+                        <button type="submit" class="w-full sm:w-auto py-2.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition">
+                            Save Budget Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================= TAB 3: RECURRING SUBSCRIPTIONS ================= -->
+        <div id="tab-subscriptions" class="tab-content hidden space-y-4">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <!-- Add Subscription Form -->
+                <div class="bg-white dark:bg-[#121722] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3">Add Subscription</h3>
+                    <form method="POST" action="/subscriptions/add" class="space-y-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Service</label>
+                            <input type="text" name="name" required placeholder="Netflix, Gym, Spotify" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Amount (₹)</label>
+                            <input type="number" step="0.01" name="amount" required placeholder="649.00" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Cycle</label>
+                            <select name="billing_cycle" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                                <option value="Monthly">Monthly</option>
+                                <option value="Yearly">Yearly</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Next Renewal</label>
+                            <input type="date" name="renewal_date" required class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                        </div>
+                        <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm transition">
+                            Track Charge
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Active Subscriptions List -->
+                <div class="lg:col-span-2 bg-white dark:bg-[#121722] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Active Recurring Commitments</h3>
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Total: ₹{{ "{:,.0f}".format(total_recurring) }}/mo</span>
+                    </div>
+
+                    {% if subscriptions %}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {% for sub in subscriptions %}
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0C101A] border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start">
+                                    <h4 class="text-xs font-bold text-slate-900 dark:text-white">{{ sub.name }}</h4>
+                                    <span class="text-xs font-bold text-blue-600 dark:text-blue-400">₹{{ "{:,.0f}".format(sub.amount) }}<span class="text-[10px] text-slate-400">/{{ sub.billing_cycle[0] }}</span></span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Renews: {{ sub.renewal_date }}</p>
+                            </div>
+                            <div class="flex justify-between items-center mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-800">
+                                <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold {% if sub.days_until <= 3 %}bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900{% else %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300{% endif %}">
+                                    {% if sub.days_until == 0 %}Renews Today!{% elif sub.days_until < 0 %}Due{% else %}In {{ sub.days_until }} days{% endif %}
+                                </span>
+                                <form method="POST" action="/subscriptions/delete/{{ sub.id }}" onsubmit="return confirm('Remove subscription?');">
+                                    <button class="text-slate-400 hover:text-rose-600 text-xs transition">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-xs text-slate-400 text-center py-8">No active recurring charges tracked yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 4: GROUP SPLIT (SPLITWISE) ================= -->
+        <div id="tab-groups" class="tab-content hidden space-y-4">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <!-- Create Group Form -->
+                <div class="bg-white dark:bg-[#121722] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3">Create Shared Group</h3>
+                    <form method="POST" action="/groups/create" class="space-y-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Group Name</label>
+                            <input type="text" name="name" required placeholder="Flat 402, Trip, Project" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Description</label>
+                            <input type="text" name="description" placeholder="Rent, meals & utilities" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Members (comma separated)</label>
+                            <input type="text" name="members" placeholder="Rahul Sharma, Aman Verma" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                        </div>
+                        <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm transition">
+                            Create Group
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Groups & Settlements Cards -->
+                <div class="lg:col-span-2 space-y-4">
+                    {% if groups %}
+                    {% for g in groups %}
+                    <div class="bg-white dark:bg-[#121722] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm space-y-3.5">
+                        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">{{ g.name }}</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">{{ g.description }}</p>
+                                <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                                    {% for m in g.members %}
+                                    <span class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{{ m }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="sm:text-right">
+                                <p class="text-[11px] text-slate-400">Total Group Bill</p>
+                                <h4 class="text-lg font-extrabold text-slate-900 dark:text-white">₹{{ "{:,.2f}".format(g.total_spent) }}</h4>
+                                <div class="mt-0.5 text-xs font-bold {% if g.net_balance > 0 %}text-emerald-600 dark:text-emerald-400{% elif g.net_balance < 0 %}text-rose-600 dark:text-rose-400{% else %}text-slate-500{% endif %}">
+                                    {% if g.net_balance > 0 %}
+                                    You are owed ₹{{ "{:,.2f}".format(g.net_balance) }}
+                                    {% elif g.net_balance < 0 %}
+                                    You owe ₹{{ "{:,.2f}".format(g.net_balance|abs) }}
+                                    {% else %}
+                                    Settled up
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Add Shared Expense in group -->
+                        <form method="POST" action="/groups/{{ g.id }}/add-expense" class="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                            <input type="text" name="description" required placeholder="Dinner, Wifi bill..." class="bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                            <input type="number" step="0.01" name="amount" required placeholder="Amount ₹" class="bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                            <select name="paid_by" class="bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                                {% for m in g.members %}
+                                <option value="{{ m }}">Paid by {{ m }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition">
+                                Add Bill
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-xs text-slate-400 text-center py-8">No split groups created yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ================= EDIT EXPENSE MODAL ================= -->
+    <div id="editModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="w-full sm:max-w-md bg-white dark:bg-[#121722] border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 sm:p-6 shadow-xl relative max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-blue-600 dark:text-blue-400"></i> Edit Transaction
+                </h3>
+                <button onclick="closeModal('editModal')" class="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="edit-form" method="POST" action="" class="space-y-3.5">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Date</label>
+                    <input type="date" name="date" id="edit-date" required class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Amount (₹)</label>
+                    <input type="number" step="0.01" name="amount" id="edit-amount" required class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Description / Merchant</label>
+                    <input type="text" name="note" id="edit-note" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Category</label>
+                        <select name="category" id="edit-category" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                            {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Method</label>
+                        <select name="payment_method" id="edit-method" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                            <option value="UPI">UPI</option>
+                            <option value="Card">Card</option>
+                            <option value="NetBanking">NetBanking</option>
+                            <option value="Cash">Cash</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 pt-2">
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm transition">
+                        Update Transaction
+                    </button>
+                    <button type="button" onclick="closeModal('editModal')" class="py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= ADD MODAL (MOBILE & DESKTOP) ================= -->
+    <div id="addModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="w-full sm:max-w-md bg-white dark:bg-[#121722] border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 sm:p-6 shadow-xl relative max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus text-blue-600 dark:text-blue-400"></i> New Expense
+                    </h3>
+                    <span id="nlp-tag-modal" class="hidden text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-900">
+                        Auto-Tagged
+                    </span>
+                </div>
+                <button onclick="closeModal('addModal')" class="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form method="POST" action="/add" class="space-y-3.5">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Date</label>
+                    <input type="date" name="date" id="tx-date-modal" required class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Amount (₹)</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">₹</span>
+                        <input type="number" step="0.01" name="amount" required placeholder="0.00" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl pl-7 pr-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Description / Merchant</label>
+                    <input type="text" id="note-modal" name="note" placeholder="e.g. Swiggy, Uber, Zara, Netflix" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600" oninput="handleAutoCategory(this.value, 'category-modal', 'nlp-tag-modal')">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Category</label>
+                        <select id="category-modal" name="category" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                            {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Method</label>
+                        <select name="payment_method" class="w-full bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                            <option value="UPI">UPI</option>
+                            <option value="Card">Card</option>
+                            <option value="NetBanking">NetBanking</option>
+                            <option value="Cash">Cash</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm transition">
+                    Save Expense
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= OCR RECEIPT SCANNER MODAL (WITH EDITABLE INPUTS) ================= -->
+    <div id="ocrModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="w-full sm:max-w-md bg-white dark:bg-[#121722] border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 sm:p-6 shadow-xl relative max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Scan Receipt</h3>
+                        <p class="text-[11px] text-slate-400">OCR entity extraction & auto-filling</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('ocrModal')" class="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Upload Dropzone -->
+            <div id="ocr-dropzone" class="border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 rounded-xl p-5 text-center cursor-pointer transition">
+                <input type="file" id="receipt-file" accept="image/*" class="hidden" onchange="processReceipt(this.files[0])">
+                <div id="dropzone-idle">
+                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-blue-600 dark:text-blue-400 mb-1.5"></i>
+                    <p class="text-xs font-semibold text-slate-800 dark:text-slate-200">Select or drop receipt image</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WEBP formats</p>
+                </div>
+
+                <!-- Scanning Animation & Progress -->
+                <div id="ocr-scanning" class="hidden py-3">
+                    <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mb-2 overflow-hidden">
+                        <div id="ocr-bar" class="bg-blue-600 h-1.5 rounded-full w-0 transition-all duration-200"></div>
+                    </div>
+                    <p id="ocr-status-text" class="text-xs font-semibold text-blue-600 dark:text-blue-400">Reading receipt...</p>
+                </div>
+            </div>
+
+            <!-- Extracted Preview & Direct Edit Form -->
+            <form id="ocr-result-form" method="POST" action="/add" class="hidden mt-3 space-y-3">
+                <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0C101A] border border-slate-200 dark:border-slate-800 space-y-2.5">
+                    <p class="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles text-blue-500"></i> Extracted Details (Review or Edit)
+                    </p>
+                    
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Merchant / Description</label>
+                        <input type="text" name="note" id="ocr-edit-merchant" required placeholder="Store Name / Description" class="w-full bg-white dark:bg-[#121722] border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Bill Date</label>
+                            <input type="date" name="date" id="ocr-edit-date" required class="w-full bg-white dark:bg-[#121722] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Total Amount (₹)</label>
+                            <input type="number" step="0.01" name="amount" id="ocr-edit-amount" required class="w-full bg-white dark:bg-[#121722] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:border-blue-600">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Category</label>
+                            <select name="category" id="ocr-edit-category" class="w-full bg-white dark:bg-[#121722] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                                {% for cat in categories %}
+                                <option value="{{ cat }}">{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Payment Method</label>
+                            <select name="payment_method" id="ocr-edit-method" class="w-full bg-white dark:bg-[#121722] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-600">
+                                <option value="Card">Card</option>
+                                <option value="UPI">UPI</option>
+                                <option value="NetBanking">NetBanking</option>
+                                <option value="Cash">Cash</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition shadow-sm">
+                    Confirm & Save to Expenses
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= CSV IMPORT MODAL ================= -->
+    <div id="csvModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="w-full sm:max-w-md bg-white dark:bg-[#121722] border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 sm:p-6 shadow-xl relative max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-file-csv"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Import Statement CSV</h3>
+                        <p class="text-[11px] text-slate-400">Bulk upload & auto-tagging</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('csvModal')" class="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form method="POST" action="/import/csv" enctype="multipart/form-data" class="space-y-3.5">
+                <div class="border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-emerald-500 rounded-xl p-5 text-center cursor-pointer transition">
+                    <input type="file" name="csv_file" accept=".csv" required class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700">
+                    <p class="text-[10px] text-slate-400 mt-2">Supports HDFC, SBI, ICICI, Axis & custom CSV exports</p>
+                </div>
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition">
+                    Upload & Classify
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= STICKY MOBILE BOTTOM NAVIGATION BAR ================= -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0E131E]/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 flex justify-around items-center py-2 px-1 transition-colors duration-200">
+        <button onclick="switchTab('tab-dashboard')" id="mbtn-tab-dashboard" class="mobile-nav-btn flex flex-col items-center gap-0.5 text-blue-600 dark:text-blue-400 p-1">
+            <i class="fa-solid fa-chart-pie text-base"></i>
+            <span class="text-[10px] font-semibold">Home</span>
+        </button>
+
+        <button onclick="switchTab('tab-budgets')" id="mbtn-tab-budgets" class="mobile-nav-btn flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 p-1">
+            <i class="fa-solid fa-sliders text-base"></i>
+            <span class="text-[10px] font-semibold">Budgets</span>
+        </button>
+
+        <!-- Center Prominent "+ Add" Touch Button -->
+        <button onclick="openModal('addModal')" class="w-11 h-11 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center text-lg shadow-md -mt-5 transition">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+
+        <button onclick="switchTab('tab-subscriptions')" id="mbtn-tab-subscriptions" class="mobile-nav-btn flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 p-1">
+            <i class="fa-solid fa-repeat text-base"></i>
+            <span class="text-[10px] font-semibold">Subs</span>
+        </button>
+
+        <button onclick="switchTab('tab-groups')" id="mbtn-tab-groups" class="mobile-nav-btn flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 p-1">
+            <i class="fa-solid fa-users text-base"></i>
+            <span class="text-[10px] font-semibold">Split</span>
+        </button>
+    </nav>
+
+    <!-- Interactive Client Scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            const inlineDate = document.getElementById('tx-date-inline');
+            const modalDate = document.getElementById('tx-date-modal');
+            if (inlineDate) inlineDate.value = today;
+            if (modalDate) modalDate.value = today;
+            initCharts();
+        });
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+            updateChartThemes();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'dark:bg-[#182030]', 'text-slate-900', 'dark:text-white', 'shadow-sm');
+                btn.classList.add('text-slate-600', 'dark:text-slate-400');
+            });
+            const activeDesktopBtn = document.getElementById('btn-' + tabId);
+            if (activeDesktopBtn) {
+                activeDesktopBtn.classList.add('bg-white', 'dark:bg-[#182030]', 'text-slate-900', 'dark:text-white', 'shadow-sm');
+                activeDesktopBtn.classList.remove('text-slate-600', 'dark:text-slate-400');
+            }
+
+            document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+                btn.classList.remove('text-blue-600', 'dark:text-blue-400');
+                btn.classList.add('text-slate-400', 'dark:text-slate-500');
+            });
+            const activeMobileBtn = document.getElementById('mbtn-' + tabId);
+            if (activeMobileBtn) {
+                activeMobileBtn.classList.add('text-blue-600', 'dark:text-blue-400');
+                activeMobileBtn.classList.remove('text-slate-400', 'dark:text-slate-500');
+            }
+
+            const activeTab = document.getElementById(tabId);
+            if (activeTab) activeTab.classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function openModal(id) {
+            const m = document.getElementById(id);
+            if (m) m.classList.remove('hidden');
+        }
+        function closeModal(id) {
+            const m = document.getElementById(id);
+            if (m) m.classList.add('hidden');
+        }
+
+        function openEditModal(id, date, amount, category, note, method) {
+            document.getElementById('edit-form').action = `/edit/${id}`;
+            document.getElementById('edit-date').value = date;
+            document.getElementById('edit-amount').value = amount;
+            document.getElementById('edit-note').value = note;
+            document.getElementById('edit-category').value = category;
+            document.getElementById('edit-method').value = method || 'UPI';
+            openModal('editModal');
+        }
+
+        const dropzone = document.getElementById('ocr-dropzone');
+        if (dropzone) {
+            dropzone.addEventListener('click', () => {
+                const fileInput = document.getElementById('receipt-file');
+                if (fileInput) fileInput.click();
+            });
+        }
+
+        let autoCatTimer = null;
+        function handleAutoCategory(text, selectId, badgeId) {
+            clearTimeout(autoCatTimer);
+            const badge = document.getElementById(badgeId);
+            if (!text || text.trim().length < 3) {
+                if (badge) badge.classList.add('hidden');
+                return;
+            }
+            autoCatTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/predict-category?text=${encodeURIComponent(text)}`);
+                    const data = await res.json();
+                    if (data && data.category && data.confidence > 0.4) {
+                        const sel = document.getElementById(selectId);
+                        if (sel) {
+                            for (let opt of sel.options) {
+                                if (opt.value.toLowerCase() === data.category.toLowerCase()) {
+                                    sel.value = opt.value;
+                                    break;
+                                }
+                            }
+                        }
+                        if (badge) {
+                            badge.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles mr-1"></i> ${data.category}`;
+                            badge.classList.remove('hidden');
+                        }
+                    }
+                } catch (e) {
+                    console.error("Auto Category Error", e);
+                }
+            }, 250);
+        }
+
+        async function processReceipt(file) {
+            if (!file) return;
+            document.getElementById('dropzone-idle').classList.add('hidden');
+            const scanningDiv = document.getElementById('ocr-scanning');
+            const bar = document.getElementById('ocr-bar');
+            const statusText = document.getElementById('ocr-status-text');
+            scanningDiv.classList.remove('hidden');
+
+            try {
+                const worker = await Tesseract.createWorker('eng', 1, {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            const pct = Math.round(m.progress * 100);
+                            bar.style.width = pct + '%';
+                            statusText.innerText = `Scanning: ${pct}%`;
+                        } else {
+                            statusText.innerText = m.status;
+                        }
+                    }
+                });
+
+                const ret = await worker.recognize(file);
+                const rawText = ret.data.text;
+                await worker.terminate();
+
+                const response = await fetch('/scan/receipt', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: new URLSearchParams({ 'ocr_text': rawText })
+                });
+                const parsed = await response.json();
+
+                scanningDiv.classList.add('hidden');
+                document.getElementById('ocr-result-form').classList.remove('hidden');
+
+                if (parsed.success) {
+                    document.getElementById('ocr-edit-merchant').value = parsed.merchant;
+                    document.getElementById('ocr-edit-date').value = parsed.date;
+                    document.getElementById('ocr-edit-amount').value = parsed.amount.toFixed(2);
+                    
+                    const catSelect = document.getElementById('ocr-edit-category');
+                    if (catSelect && parsed.category) {
+                        for (let opt of catSelect.options) {
+                            if (opt.value.toLowerCase() === parsed.category.toLowerCase()) {
+                                catSelect.value = opt.value;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("OCR Failed", err);
+                statusText.innerText = "Error scanning image.";
+            }
+        }
+
+        let categoryChartInstance = null;
+        let trendChartInstance = null;
+
+        function getChartThemeColors() {
+            const isDark = document.documentElement.classList.contains('dark');
+            return {
+                text: isDark ? '#94a3b8' : '#475569',
+                grid: isDark ? '#1e293b' : '#f1f5f9',
+                donutBorder: isDark ? '#121722' : '#ffffff',
+                barColor: isDark ? '#3b82f6' : '#2563eb',
+                barHover: isDark ? '#60a5fa' : '#1d4ed8'
+            };
+        }
+
+        function initCharts() {
+            const theme = getChartThemeColors();
+            const catLabels = {{ chart_labels | tojson }};
+            const catValues = {{ chart_values | tojson }};
+            const catCtx = document.getElementById('categoryChart');
+            
+            if (catCtx) {
+                categoryChartInstance = new Chart(catCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: catLabels,
+                        datasets: [{
+                            data: catValues,
+                            backgroundColor: ['#2563eb', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#64748b'],
+                            borderWidth: 2,
+                            borderColor: theme.donutBorder,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 8, color: theme.text, font: { size: 9, family: 'Plus Jakarta Sans' } } }
+                        },
+                        cutout: '72%'
+                    }
+                });
+            }
+
+            // Month-on-Month Comparison Bar Chart
+            const momLabels = {{ mom_labels | tojson }};
+            const momValues = {{ mom_values | tojson }};
+            const trendCtx = document.getElementById('trendChart');
+            if (trendCtx) {
+                trendChartInstance = new Chart(trendCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: momLabels,
+                        datasets: [{
+                            label: 'Monthly Total (₹)',
+                            data: momValues,
+                            backgroundColor: theme.barColor,
+                            hoverBackgroundColor: theme.barHover,
+                            borderRadius: 6,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return ' Total: ₹' + context.parsed.y.toLocaleString('en-IN');
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { color: theme.text, font: { size: 9, family: 'Plus Jakarta Sans' } } },
+                            y: { grid: { color: theme.grid }, ticks: { color: theme.text, font: { size: 9, family: 'Plus Jakarta Sans' } } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function updateChartThemes() {
+            const theme = getChartThemeColors();
+            if (categoryChartInstance) {
+                categoryChartInstance.data.datasets[0].borderColor = theme.donutBorder;
+                categoryChartInstance.options.plugins.legend.labels.color = theme.text;
+                categoryChartInstance.update();
+            }
+            if (trendChartInstance) {
+                trendChartInstance.data.datasets[0].backgroundColor = theme.barColor;
+                trendChartInstance.data.datasets[0].hoverBackgroundColor = theme.barHover;
+                trendChartInstance.options.scales.x.ticks.color = theme.text;
+                trendChartInstance.options.scales.y.grid.color = theme.grid;
+                trendChartInstance.options.scales.y.ticks.color = theme.text;
+                trendChartInstance.update();
+            }
+        }
+    </script>
+</body>
+</html>
