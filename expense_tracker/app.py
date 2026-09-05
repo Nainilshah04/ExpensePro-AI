@@ -38,7 +38,9 @@ def favicon():
 @app.route("/api/index")
 @app.route("/api/index.py")
 def vercel_entry_alias():
-    return redirect(url_for("home"))
+    if current_user.is_authenticated:
+        return home()
+    return login()
 
 login_manager = LoginManager()
 login_manager.login_view = "login"
